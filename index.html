@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#efe3cf"><title>SHADOW ROOF TOP | Menu</title>
+<style>
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#eee2d0;font-family:Arial,sans-serif}main{max-width:850px;margin:auto}.page{display:block;width:100%;height:auto;margin:0;box-shadow:0 1px 4px #0002}#status{position:fixed;inset:0;display:grid;place-items:center;background:#eee2d0;color:#473526;font-size:17px;z-index:3;text-align:center;padding:24px}#status.hidden{display:none}.error{color:#9b2323}canvas{display:block;width:100%;height:auto}#pages{overflow:hidden}
+</style></head><body><div id="status">جاري تحميل المنيو…</div><main id="pages" aria-label="Shadow Roof Top menu"></main>
+<script type="module">
+import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs';
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';
+const pages=document.getElementById('pages'),status=document.getElementById('status');
+try {
+ const pdf=await pdfjsLib.getDocument({url:'./menu.pdf'}).promise;
+ const jobs=[];
+ for(let i=1;i<=pdf.numPages;i++){
+   const page=await pdf.getPage(i), view=page.getViewport({scale:1});
+   const canvas=document.createElement('canvas');canvas.className='page';canvas.setAttribute('aria-label',`صفحة ${i}`);
+   canvas.style.aspectRatio=`${view.width} / ${view.height}`;pages.appendChild(canvas);
+   jobs.push({page,canvas,view});
+ }
+ status.classList.add('hidden');
+ const observer=new IntersectionObserver(entries=>{
+   for(const entry of entries){if(!entry.isIntersecting)continue;
+     const canvas=entry.target;observer.unobserve(canvas);
+     const job=jobs.find(x=>x.canvas===canvas);
+     const scale=Math.min(2,Math.max(1,window.devicePixelRatio||1)) * Math.min(1,850/job.view.width);
+     const viewport=job.page.getViewport({scale});canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);
+     job.page.render({canvasContext:canvas.getContext('2d',{alpha:false}),viewport}).promise.catch(console.error);
+   }
+ },{rootMargin:'1200px 0px'});
+ jobs.forEach(x=>observer.observe(x.canvas));
+}catch(err){status.innerHTML='<span class="error">تعذر تحميل المنيو. تأكد من رفع ملفي index.html و menu.pdf معًا على استضافة ويب.</span>';console.error(err)}
+</script></body></html>
